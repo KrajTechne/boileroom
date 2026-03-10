@@ -203,8 +203,9 @@ class ESMFold(FoldingAlgorithm):
     # For instance, if we want to also allow differently sized structure modules, than this would be good
     # TODO: we should add a settings dictionary or something, that would make it easier to add new options
     # TODO: maybe use OmegaConf instead to make it easier instead of config
-    def __init__(self, config: dict = {}) -> None:
-        """Initialize ESMFold."""
+    @modal.enter()
+    def _initialize(self) -> None:
+        """Initialize the model during container startup. This helps us determine whether we run locally or remotely."""
         # 3. Call the base class setup logic using the modal parameter
         self._setup_base(self.input_config)
         
@@ -216,11 +217,6 @@ class ESMFold(FoldingAlgorithm):
         self.tokenizer: Optional[AutoTokenizer] = None
         self.model: Optional[EsmForProteinFolding] = None
         
-        self._load()
-
-    @modal.enter()
-    def _initialize(self) -> None:
-        """Initialize the model during container startup. This helps us determine whether we run locally or remotely."""
         self._load()
 
     def _load(self) -> None:
