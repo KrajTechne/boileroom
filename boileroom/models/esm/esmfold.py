@@ -196,7 +196,7 @@ class ESMFold(FoldingAlgorithm):
     }
 
     #1. Define inputs as modal parameters to avoid namespace collisions with self.config
-    input_config: dict = modal.parameter(default_factory=dict)
+    input_config: dict = modal.parameter(default = {})
 
     # We need to properly asses whether using this or the original ESMFold is better
     # based on speed, accuracy, bugs, etc.; as well as customizability

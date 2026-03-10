@@ -55,7 +55,7 @@ class ESM2(EmbeddingAlgorithm):
     }
 
     # 1. Define configuration as a Modal parameter
-    input_config: dict = modal.parameter(default_factory=dict)
+    input_config: dict = modal.parameter(default = {})
 
     @staticmethod
     def assert_valid_model(config: dict) -> None:
