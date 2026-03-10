@@ -177,7 +177,7 @@ if GPU_TO_USE not in GPUS_AVAIL_ON_MODAL:
     image=esm_image,
     gpu=GPU_TO_USE,
     timeout=20 * MINUTES,
-    container_idle_timeout=10 * MINUTES,
+    scaledown_window= 10 * MINUTES, # Fixed parameter name
     volumes={MODEL_DIR: model_weights},
 )
 class ESMFold(FoldingAlgorithm):
@@ -195,6 +195,9 @@ class ESMFold(FoldingAlgorithm):
         "position_ids_skip": 512,
     }
 
+    #1. Define inputs as modal parameters to avoid namespace collisions with self.config
+    input_config: dict = modal.parameter(default_factory=dict)
+
     # We need to properly asses whether using this or the original ESMFold is better
     # based on speed, accuracy, bugs, etc.; as well as customizability
     # For instance, if we want to also allow differently sized structure modules, than this would be good
@@ -202,14 +205,18 @@ class ESMFold(FoldingAlgorithm):
     # TODO: maybe use OmegaConf instead to make it easier instead of config
     def __init__(self, config: dict = {}) -> None:
         """Initialize ESMFold."""
-        super().__init__(config)
+        # 3. Call the base class setup logic using the modal parameter
+        self._setup_base(self.input_config)
+        
         self.metadata = self._initialize_metadata(
             model_name="ESMFold",
-            model_version="v4.49.0",  # HuggingFace transformers version
+            model_version="v4.49.0",  
         )
         self.model_dir: Optional[str] = os.environ.get("MODEL_DIR", MODEL_DIR)
         self.tokenizer: Optional[AutoTokenizer] = None
         self.model: Optional[EsmForProteinFolding] = None
+        
+        self._load()
 
     @modal.enter()
     def _initialize(self) -> None:
@@ -575,4 +582,5 @@ def get_esmfold(gpu_type="T4", config: dict = {}):
     and display accordingly in the Modal dashboard.
     """
     Model = ESMFold.with_options(gpu=gpu_type)  # type: ignore
-    return Model(config=config)
+    # Pass the config to the new modal.parameter name
+    return Model(input_config=config)

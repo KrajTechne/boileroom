@@ -44,8 +44,8 @@ class Algorithm(ABC):
 
     DEFAULT_CONFIG: dict = {}
 
-    def __init__(self, config: dict = {}) -> None:
-        """Initialize the algorithm."""
+    def _setup_base(self, config: dict = {}) -> None:
+        """Initialize the algorithm base state. Call this in @modal.enter() for remote apps."""
         self.config = {**self.DEFAULT_CONFIG, **config}
         self.name: str = self.__class__.__name__
         self.version: str = ""  # Should be overridden by implementations

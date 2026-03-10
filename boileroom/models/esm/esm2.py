@@ -40,7 +40,7 @@ with esm_image.imports():
     image=esm_image,
     gpu="T4",
     timeout=20 * MINUTES,
-    container_idle_timeout=10 * MINUTES,
+    scaledown_window =10 * MINUTES,
     volumes={MODEL_DIR: model_weights},
 )
 class ESM2(EmbeddingAlgorithm):
@@ -54,16 +54,8 @@ class ESM2(EmbeddingAlgorithm):
         "position_ids_skip": 512,
     }
 
-    def __init__(self, config: dict = {}) -> None:
-        super().__init__(config)
-        self.metadata = self._initialize_metadata(
-            model_name="ESM-2",
-            model_version="v4.49.0",  # HuggingFace transformers version
-        )
-        self.model_dir: Optional[str] = os.environ.get("MODEL_DIR", MODEL_DIR)
-        self.tokenizer: Optional[AutoTokenizer] = None
-        self.model: Optional[EsmModel] = None
-        self.assert_valid_model(config)
+    # 1. Define configuration as a Modal parameter
+    input_config: dict = modal.parameter(default_factory=dict)
 
     @staticmethod
     def assert_valid_model(config: dict) -> None:
@@ -90,6 +82,19 @@ class ESM2(EmbeddingAlgorithm):
 
     @modal.enter()
     def _initialize(self) -> None:
+        # 3. Call the base class setup using the new input_config parameter
+        self._setup_base(self.input_config)
+        
+        self.metadata = self._initialize_metadata(
+            model_name="ESM-2",
+            model_version="v4.49.0",  # HuggingFace transformers version
+        )
+        self.model_dir: Optional[str] = os.environ.get("MODEL_DIR", MODEL_DIR)
+        self.tokenizer: Optional[AutoTokenizer] = None
+        self.model: Optional[EsmModel] = None
+        
+        # Validate the model using the fully merged self.config
+        self.assert_valid_model(self.config)
         self._load()
 
     def _load(self) -> None:
@@ -282,4 +287,5 @@ def get_esm2(gpu_type="T4", config: dict = {}):
     and display accordingly in the Modal dashboard.
     """
     Model = ESM2.with_options(gpu=gpu_type)  # type: ignore
-    return Model(config=config)
+    # 4. Pass the config directly to the updated parameter name
+    return Model(input_config=config)
