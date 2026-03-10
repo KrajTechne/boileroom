@@ -1,6 +1,7 @@
 """ESMFold implementation for protein structure prediction using Meta AI's ESM-2 model."""
 
 import os
+import json
 import logging
 from dataclasses import dataclass
 from typing import Optional, List, Union
@@ -196,7 +197,7 @@ class ESMFold(FoldingAlgorithm):
     }
 
     #1. Define inputs as modal parameters to avoid namespace collisions with self.config
-    input_config: dict = modal.parameter(default = {})
+    config_json: str = modal.parameter(default = "{}")
 
     # We need to properly asses whether using this or the original ESMFold is better
     # based on speed, accuracy, bugs, etc.; as well as customizability
@@ -207,7 +208,8 @@ class ESMFold(FoldingAlgorithm):
     def _initialize(self) -> None:
         """Initialize the model during container startup. This helps us determine whether we run locally or remotely."""
         # 3. Call the base class setup logic using the modal parameter
-        self._setup_base(self.input_config)
+        input_config = json.loads(self.config_json)
+        self._setup_base(input_config)
         
         self.metadata = self._initialize_metadata(
             model_name="ESMFold",
@@ -579,4 +581,4 @@ def get_esmfold(gpu_type="T4", config: dict = {}):
     """
     Model = ESMFold.with_options(gpu=gpu_type)  # type: ignore
     # Pass the config to the new modal.parameter name
-    return Model(input_config=config)
+    return Model(config_json = json.dumps(config))

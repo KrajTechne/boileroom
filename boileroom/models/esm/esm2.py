@@ -1,6 +1,7 @@
 import modal
 import numpy as np
 import os
+import json
 from dataclasses import dataclass
 from typing import List, Union, Optional, TYPE_CHECKING
 
@@ -55,7 +56,7 @@ class ESM2(EmbeddingAlgorithm):
     }
 
     # 1. Define configuration as a Modal parameter
-    input_config: dict = modal.parameter(default = {})
+    config_json: str = modal.parameter(default = "{}")
 
     @staticmethod
     def assert_valid_model(config: dict) -> None:
@@ -83,7 +84,8 @@ class ESM2(EmbeddingAlgorithm):
     @modal.enter()
     def _initialize(self) -> None:
         # 3. Call the base class setup using the new input_config parameter
-        self._setup_base(self.input_config)
+        input_config = json.loads(self.config_json)
+        self._setup_base(input_config)
         
         self.metadata = self._initialize_metadata(
             model_name="ESM-2",
@@ -288,4 +290,4 @@ def get_esm2(gpu_type="T4", config: dict = {}):
     """
     Model = ESM2.with_options(gpu=gpu_type)  # type: ignore
     # 4. Pass the config directly to the updated parameter name
-    return Model(input_config=config)
+    return Model(config_json = json.dumps(config))
