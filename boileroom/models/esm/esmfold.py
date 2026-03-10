@@ -208,7 +208,12 @@ class ESMFold(FoldingAlgorithm):
     def _initialize(self) -> None:
         """Initialize the model during container startup. This helps us determine whether we run locally or remotely."""
         # 3. Call the base class setup logic using the modal parameter
-        input_config = json.loads(self.config_json)
+        # Check if it is a JSON string (remote) or already a dict (local)
+        if isinstance(self.config_json, str):
+            input_config = json.loads(self.config_json)
+        else:
+            input_config = self.config_json
+        
         self._setup_base(input_config)
         
         self.metadata = self._initialize_metadata(

@@ -84,7 +84,12 @@ class ESM2(EmbeddingAlgorithm):
     @modal.enter()
     def _initialize(self) -> None:
         # 3. Call the base class setup using the new input_config parameter
-        input_config = json.loads(self.config_json)
+        # Check if it is a JSON string (remote) or already a dict (local)
+        if isinstance(self.config_json, str):
+            input_config = json.loads(self.config_json)
+        else:
+            input_config = self.config_json
+        
         self._setup_base(input_config)
         
         self.metadata = self._initialize_metadata(
